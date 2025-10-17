@@ -15,10 +15,33 @@
 
   body {
     @apply min-h-screen;
-    background-color: rgb(var(--bg));
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.95) 0%, 
+      rgba(240, 248, 255, 0.98) 25%,
+      rgba(255, 250, 250, 0.98) 50%,
+      rgba(248, 250, 255, 0.98) 75%,
+      rgba(255, 255, 255, 0.95) 100%
+    );
+    background-attachment: fixed;
     color: rgb(var(--fg));
-    background-image: radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
-    background-size: 12px 12px;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
+      radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 20px 20px;
+    pointer-events: none;
+    z-index: -1;
   }
 
   a {
