@@ -8,38 +8,24 @@ export default function HomePage() {
       <div className="max-w-4xl mx-auto text-center space-y-8">
         {/* Pulsating Title */}
         <div className="relative">
-          <h1 className="text-7xl md:text-8xl font-bold tracking-tight animate-pulse">
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Task Manager
-            </span>
+          <h1 className="text-8xl md:text-9xl font-black tracking-tight animate-pulse text-black">
+            Task Manager
           </h1>
-          <div className="absolute inset-0 blur-3xl opacity-30 animate-pulse">
-            <div className="w-full h-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400"></div>
-          </div>
         </div>
 
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-gray-700 font-light max-w-2xl mx-auto">
+        <p className="text-xl md:text-2xl text-gray-800 font-light max-w-2xl mx-auto">
           Your minimalistic productivity companion. Calendar, tasks, and timer—all in one beautiful place.
         </p>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+        {/* CTA Button */}
+        <div className="flex items-center justify-center pt-4">
           <Link
             to="/calendar"
-            className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            className="group relative px-12 py-5 bg-black text-white rounded-2xl font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110"
           >
-            <span className="relative z-10">Get Started</span>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            Get Started
           </Link>
-          <a
-            href="https://github.com/yarzadaryan/task-scheduler"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-8 py-4 bg-white/60 backdrop-blur-xl border-2 border-white/40 text-gray-800 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/80"
-          >
-            View on GitHub
-          </a>
         </div>
       </div>
 
