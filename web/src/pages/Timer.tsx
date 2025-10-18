@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PlayIcon, PauseIcon, RotateCcwIcon } from 'lucide-react'
 import { useToast } from '../ui/toast'
+import { useStore } from '../store'
 
 function format(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -18,6 +19,10 @@ export default function TimerPage() {
   const tickRef = useRef<number | null>(null)
   const remaining = useMemo(() => (target ? target - Date.now() : workMin * 60_000), [target, workMin])
   const { toast } = useToast()
+  const addEvent = useStore((s) => s.addEvent)
+  const updateEvent = useStore((s) => s.updateEvent)
+  const [activeEventId, setActiveEventId] = useState<string | null>(null)
+  const [sessionTitle, setSessionTitle] = useState<string>('Work Session')
 
   useEffect(() => {
     if (!isRunning) return
@@ -25,9 +30,18 @@ export default function TimerPage() {
       if (target && Date.now() >= target) {
         // time's up
         notify(isBreak ? 'Break finished' : 'Work session finished')
+        // Close current calendar event at this boundary
+        if (activeEventId) {
+          updateEvent(activeEventId, { end: Date.now() })
+          setActiveEventId(null)
+        }
         const nextTarget = Date.now() + (isBreak ? workMin : breakMin) * 60_000
         setIsBreak((b) => !b)
         setTarget(nextTarget)
+        const nextTitle = !isBreak ? 'Break Session' : 'Work Session'
+        setSessionTitle(nextTitle)
+        // Start next session event
+        addEvent({ title: nextTitle, start: Date.now(), allDay: false }).then((evt) => setActiveEventId(evt.id))
       }
       tickRef.current = requestAnimationFrame(loop)
     })
@@ -42,6 +56,12 @@ export default function TimerPage() {
       setTarget(Date.now() + workMin * 60_000)
     }
     setIsRunning(true)
+    const title = isBreak ? 'Break Session' : 'Work Session'
+    setSessionTitle(title)
+    // If no active event, create one now
+    if (!activeEventId) {
+      addEvent({ title, start: Date.now(), allDay: false }).then((evt) => setActiveEventId(evt.id))
+    }
     toast({ type: 'success', message: isBreak ? 'Resumed break' : 'Started work' })
   }
   function pause() {
@@ -50,12 +70,20 @@ export default function TimerPage() {
       const rem = Math.max(0, target - Date.now())
       setTarget(Date.now() + rem)
     }
+    if (activeEventId) {
+      updateEvent(activeEventId, { end: Date.now() })
+      setActiveEventId(null)
+    }
     toast({ type: 'info', message: 'Paused' })
   }
   function reset() {
     setIsRunning(false)
     setIsBreak(false)
     setTarget(null)
+    if (activeEventId) {
+      updateEvent(activeEventId, { end: Date.now() })
+      setActiveEventId(null)
+    }
     toast({ type: 'info', message: 'Reset' })
   }
 

@@ -32,6 +32,7 @@ interface State {
   // events
   addEvent: (e: Omit<CalEvent, 'id' | 'createdAt' | 'updatedAt'>) => Promise<CalEvent>
   removeEvent: (id: ID) => Promise<void>
+  updateEvent: (id: ID, patch: Partial<CalEvent>) => Promise<void>
   // presets
   addPreset: (title: string) => void
   removePreset: (title: string) => void
@@ -71,6 +72,9 @@ export const useStore = create<State>()(
         const task: Task = { id: crypto.randomUUID(), createdAt: now, updatedAt: now, completedAt: null, ...t }
         await putTask(task)
         set({ tasks: [...get().tasks, task] })
+        // Also add to calendar as all-day event on due date (default: today)
+        const due = task.dueAt ?? startOfToday()
+        await get().addEvent({ title: task.title, start: due, allDay: true })
         return task
       },
       async toggleTask(id) {
@@ -83,6 +87,17 @@ export const useStore = create<State>()(
         }
         await putTask(updated)
         set({ tasks: get().tasks.map((x) => (x.id === id ? updated : x)) })
+        // Try to find matching calendar event (same title, same start-of-day as due date)
+        const due = (updated.dueAt ?? startOfToday())
+        const s = new Date(due)
+        s.setHours(0,0,0,0)
+        const targetStart = s.getTime()
+        const ev = get().events.find((e) => e.title.replace(/\s*✅$/, '') === updated.title && (e.start >= targetStart && e.start < targetStart + 24*60*60*1000))
+        if (ev) {
+          const already = /✅$/.test(ev.title)
+          const newTitle = updated.completedAt && !already ? `${ev.title} ✅` : (!updated.completedAt && already ? ev.title.replace(/\s*✅$/, '') : ev.title)
+          await get().updateEvent(ev.id, { title: newTitle })
+        }
       },
       async removeTask(id) {
         await deleteTask(id)
@@ -98,6 +113,13 @@ export const useStore = create<State>()(
       async removeEvent(id) {
         await deleteEvent(id)
         set({ events: get().events.filter((x) => x.id !== id) })
+      },
+      async updateEvent(id, patch) {
+        const current = get().events.find((e) => e.id === id)
+        if (!current) return
+        const updated: CalEvent = { ...current, ...patch, updatedAt: Date.now() }
+        await putEvent(updated)
+        set({ events: get().events.map((e) => (e.id === id ? updated : e)) })
       },
       addPreset(title) {
         const t = title.trim()
