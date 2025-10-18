@@ -9,6 +9,7 @@ import { useTheme } from './ui/theme'
 const HomePage = lazy(() => import('./pages/Home'))
 const CalendarPage = lazy(() => import('./pages/Calendar'))
 const TasksPage = lazy(() => import('./pages/Tasks'))
+const DiaryPage = lazy(() => import('./pages/Diary'))
 const TimerPage = lazy(() => import('./pages/Timer'))
 
 export default function App() {
@@ -88,6 +89,7 @@ export default function App() {
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/timer" element={<TimerPage />} />
+              <Route path="/diary/:date" element={<DiaryPage />} />
             </Routes>
           </Suspense>
         )}
