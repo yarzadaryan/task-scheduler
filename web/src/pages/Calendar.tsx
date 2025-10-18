@@ -26,27 +26,37 @@ export default function CalendarPage() {
   )
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-      <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        selectable
-        editable
-        headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
-        events={fcEvents}
-        dateClick={(info: DateClickArg) => {
-          const title = prompt('New task title?')?.trim()
-          if (!title) return
-          addEvent({ title, start: dayjs(info.dateStr).valueOf(), allDay: true })
-        }}
-        eventClick={(info: EventClickArg) => {
-          const shouldDelete = confirm(`Delete "${info.event.title}"?`)
-          if (shouldDelete) {
-            removeEvent(info.event.id)
-          }
-        }}
-      />
+    <div className="space-y-6">
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+          <p className="text-sm text-black/60">Plan by month, week, or day</p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-3 shadow-sm">
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          selectable
+          editable
+          height="auto"
+          aspectRatio={1.6}
+          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
+          events={fcEvents}
+          dateClick={(info: DateClickArg) => {
+            const title = prompt('New event title?')?.trim()
+            if (!title) return
+            addEvent({ title, start: dayjs(info.dateStr).valueOf(), allDay: true })
+          }}
+          eventClick={(info: EventClickArg) => {
+            const shouldDelete = confirm(`Delete "${info.event.title}"?`)
+            if (shouldDelete) {
+              removeEvent(info.event.id)
+            }
+          }}
+        />
+      </div>
     </div>
   )
 }

@@ -65,56 +65,67 @@ export default function TimerPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Timer</h1>
-
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <label className="inline-flex items-center gap-2">
-          Work
-          <input
-            type="number"
-            min={1}
-            max={120}
-            value={workMin}
-            onChange={(e) => setWorkMin(Number(e.target.value))}
-            className="w-20 rounded-md border border-black/10 bg-white/70 px-2 py-1"
-          />
-          min
-        </label>
-        <label className="inline-flex items-center gap-2">
-          Break
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={breakMin}
-            onChange={(e) => setBreakMin(Number(e.target.value))}
-            className="w-20 rounded-md border border-black/10 bg-white/70 px-2 py-1"
-          />
-          min
-        </label>
-      </div>
-
-      <div className="flex flex-col items-center gap-4">
-        <div className="text-6xl font-bold tabular-nums tracking-tight">{format(remaining)}</div>
-        <div className="text-sm text-black/60">{isBreak ? 'Break' : 'Work'}</div>
-        <div className="flex items-center gap-2">
-          {!isRunning ? (
-            <button onClick={start} className="inline-flex items-center gap-2 rounded-full bg-black text-white px-4 py-2 hover:bg-black/90">
-              <PlayIcon className="h-4 w-4" /> Start
-            </button>
-          ) : (
-            <button onClick={pause} className="inline-flex items-center gap-2 rounded-full bg-black/80 text-white px-4 py-2 hover:bg-black">
-              <PauseIcon className="h-4 w-4" /> Pause
-            </button>
-          )}
-          <button onClick={reset} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 py-2 hover:bg-white">
-            <RotateCcwIcon className="h-4 w-4" /> Reset
-          </button>
+    <div className="space-y-8">
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Timer</h1>
+          <p className="text-sm text-black/60">Focus with intervals and gentle reminders</p>
         </div>
       </div>
 
-      <p className="text-xs text-black/50">Tip: allow notifications in your browser to get an alert when a session ends.</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
+            <h2 className="text-lg font-semibold mb-3">Settings</h2>
+            <div className="flex flex-col gap-3 text-sm">
+              <label className="inline-flex items-center justify-between gap-2">
+                <span>Work (min)</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={workMin}
+                  onChange={(e) => setWorkMin(Number(e.target.value))}
+                  className="w-24 rounded-md border border-black/10 bg-white px-2 py-1"
+                />
+              </label>
+              <label className="inline-flex items-center justify-between gap-2">
+                <span>Break (min)</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={breakMin}
+                  onChange={(e) => setBreakMin(Number(e.target.value))}
+                  className="w-24 rounded-md border border-black/10 bg-white px-2 py-1"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2">
+          <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-6 shadow-sm flex flex-col items-center gap-4">
+            <div className="text-xs uppercase tracking-wider text-black/50">{isBreak ? 'Break' : 'Work'} Session</div>
+            <div className="text-7xl md:text-8xl font-extrabold tabular-nums tracking-tight">{format(remaining)}</div>
+            <div className="flex items-center gap-3 pt-2">
+              {!isRunning ? (
+                <button onClick={start} className="inline-flex items-center gap-2 rounded-full bg-black text-white px-5 py-2.5 hover:bg-black/90">
+                  <PlayIcon className="h-4 w-4" /> Start
+                </button>
+              ) : (
+                <button onClick={pause} className="inline-flex items-center gap-2 rounded-full bg-black/80 text-white px-5 py-2.5 hover:bg-black">
+                  <PauseIcon className="h-4 w-4" /> Pause
+                </button>
+              )}
+              <button onClick={reset} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2.5 hover:bg-white/90">
+                <RotateCcwIcon className="h-4 w-4" /> Reset
+              </button>
+            </div>
+            <p className="text-xs text-black/50">Tip: allow notifications to get an alert when a session ends.</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
