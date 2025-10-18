@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { PlusIcon } from 'lucide-react'
 import { useStore } from '../store'
 import { useToast } from '../ui/toast'
@@ -13,6 +13,9 @@ export default function TasksPage() {
   const addPreset = useStore((s) => s.addPreset)
   const removePreset = useStore((s) => s.removePreset)
   const [title, setTitle] = useState('')
+  const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0,10))
+  const [startTime, setStartTime] = useState<string>('')
+  const [endTime, setEndTime] = useState<string>('')
   const [newPreset, setNewPreset] = useState('')
   const { toast } = useToast()
   const todayNote = useStore((s) => s.todayNote)
@@ -62,6 +65,18 @@ export default function TasksPage() {
     return d.getTime()
   }
 
+  const timeOptions = useMemo(() => {
+    const arr: string[] = []
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const hh = String(h).padStart(2, '0')
+        const mm = String(m).padStart(2, '0')
+        arr.push(`${hh}:${mm}`)
+      }
+    }
+    return arr
+  }, [])
+
   const streakByTitle = useMemo(() => {
     const map = new Map<string, number>()
     const today = dayStart(Date.now())
@@ -82,11 +97,44 @@ export default function TasksPage() {
     return map
   }, [tasks, presets])
 
+  const addEvent = useStore((s) => s.addEvent)
+  const removeEvent = useStore((s) => s.removeEvent)
+
+  function toMs(dateStr: string, timeStr: string) {
+    const [y,m,d] = dateStr.split('-').map(Number)
+    const [hh,mm] = timeStr.split(':').map(Number)
+    const dt = new Date(y, (m-1), d, hh || 0, mm || 0, 0, 0)
+    return dt.getTime()
+  }
+
   async function add() {
     const t = title.trim()
     if (!t) return
-    await addTask({ title: t })
+    // If date/time provided, compute dueAt and possibly create a timed calendar event.
+    let dueAt: number | undefined = undefined
+    if (date) {
+      if (startTime) {
+        dueAt = toMs(date, startTime)
+      } else {
+        // start of day if no time
+        dueAt = toMs(date, '00:00')
+      }
+    }
+    await addTask({ title: t, dueAt })
+    // Store auto-adds an all-day event at due date. If we have a time range, replace with a timed event.
+    if (date && startTime && endTime) {
+      // find and remove the all-day event for this task/date
+      const dayStart = toMs(date, '00:00')
+      const dayEnd = dayStart + 24*60*60*1000
+      const ev = useStore.getState().events.find((e) => e.title.replace(/\s*✅$/, '') === t && e.allDay && e.start >= dayStart && e.start < dayEnd)
+      if (ev) await removeEvent(ev.id)
+      const start = toMs(date, startTime)
+      const end = Math.max(start + 15*60*1000, toMs(date, endTime))
+      await addEvent({ title: t, start, end, allDay: false })
+    }
     setTitle('')
+    setStartTime('')
+    setEndTime('')
     toast({ type: 'success', title: 'Task added', message: t })
   }
 
@@ -163,17 +211,44 @@ export default function TasksPage() {
 
         <div className="lg:col-span-2 space-y-4">
           <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
-            <div className="flex gap-2">
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Add a task"
-                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20"
-                onKeyDown={(e) => e.key === 'Enter' && add()}
-              />
-              <button onClick={add} className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">
-                <PlusIcon className="h-4 w-4" /> Add
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
+              <div className="md:col-span-2">
+                <label className="block text-xs text-black/60 mb-1">Task</label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="What to do"
+                  className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                  onKeyDown={(e) => e.key === 'Enter' && add()}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-black/60 mb-1">Date</label>
+                <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs text-black/60 mb-1">Start</label>
+                <select value={startTime} onChange={(e)=>setStartTime(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none">
+                  <option value="">All-day</option>
+                  {timeOptions.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-black/60 mb-1">End</label>
+                <select value={endTime} onChange={(e)=>setEndTime(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none">
+                  <option value="">—</option>
+                  {timeOptions.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <button onClick={add} className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">
+                  <PlusIcon className="h-4 w-4" /> Add
+                </button>
+              </div>
             </div>
           </div>
 
@@ -181,7 +256,14 @@ export default function TasksPage() {
           <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">Daily Diary</h2>
-              <span className="text-xs text-black/50">Note for {new Date(selectedDate).toLocaleDateString()}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-black/50">Note for {new Date(selectedDate).toLocaleDateString()}</span>
+                <Link
+                  to={`/diary/${selectedDate}`}
+                  className="text-xs underline underline-offset-4"
+                  title="Open in Diary"
+                >Open in Diary</Link>
+              </div>
             </div>
             <textarea
               value={noteContent}
