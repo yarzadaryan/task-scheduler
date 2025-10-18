@@ -17,6 +17,7 @@ export default function TasksPage() {
   const [startTime, setStartTime] = useState<string>('')
   const [endTime, setEndTime] = useState<string>('')
   const [newPreset, setNewPreset] = useState('')
+  const [repeatWeekly, setRepeatWeekly] = useState(false)
   const { toast } = useToast()
   const todayNote = useStore((s) => s.todayNote)
   const notes = useStore((s) => s.notes)
@@ -132,9 +133,34 @@ export default function TasksPage() {
       const end = Math.max(start + 15*60*1000, toMs(date, endTime))
       await addEvent({ title: t, start, end, allDay: false })
     }
+    // Recurring weekly (create next 6 weeks additionally)
+    if (repeatWeekly && date) {
+      const baseDayStart = toMs(date, '00:00')
+      for (let i = 1; i < 7; i++) {
+        const offset = i * 7 * 24 * 60 * 60 * 1000
+        const nextDateMs = baseDayStart + offset
+        const nextDate = new Date(nextDateMs)
+        const y = nextDate.getFullYear()
+        const m = String(nextDate.getMonth() + 1).padStart(2, '0')
+        const d = String(nextDate.getDate()).padStart(2, '0')
+        const nextDateStr = `${y}-${m}-${d}`
+        const nextDueAt = startTime ? toMs(nextDateStr, startTime) : nextDateMs
+        await addTask({ title: t, dueAt: nextDueAt })
+        if (startTime && endTime) {
+          const dayStart = nextDateMs
+          const dayEnd = dayStart + 24*60*60*1000
+          const ev = useStore.getState().events.find((e) => e.title.replace(/\s*✅$/, '') === t && e.allDay && e.start >= dayStart && e.start < dayEnd)
+          if (ev) await removeEvent(ev.id)
+          const start = toMs(nextDateStr, startTime)
+          const end = Math.max(start + 15*60*1000, toMs(nextDateStr, endTime))
+          await addEvent({ title: t, start, end, allDay: false })
+        }
+      }
+    }
     setTitle('')
     setStartTime('')
     setEndTime('')
+    setRepeatWeekly(false)
     toast({ type: 'success', title: 'Task added', message: t })
   }
 
@@ -248,6 +274,11 @@ export default function TasksPage() {
                 <button onClick={add} className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">
                   <PlusIcon className="h-4 w-4" /> Add
                 </button>
+              </div>
+              <div className="md:col-span-5">
+                <label className="inline-flex items-center gap-2 text-xs text-black/70">
+                  <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} /> Repeat weekly (next 6 weeks)
+                </label>
               </div>
             </div>
           </div>
