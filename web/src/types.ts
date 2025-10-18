@@ -21,3 +21,11 @@ export interface CalEvent {
   createdAt: number
   updatedAt: number
 }
+
+export interface DailyNote {
+  id: ID
+  date: number // start of day epoch ms
+  content: string
+  createdAt: number
+  updatedAt: number
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PlusIcon } from 'lucide-react'
 import { useStore } from '../store'
 import { useToast } from '../ui/toast'
@@ -14,6 +14,18 @@ export default function TasksPage() {
   const [title, setTitle] = useState('')
   const [newPreset, setNewPreset] = useState('')
   const { toast } = useToast()
+  const todayNote = useStore((s) => s.todayNote)
+  const loadTodayNote = useStore((s) => s.loadTodayNote)
+  const saveTodayNote = useStore((s) => s.saveTodayNote)
+  const [noteContent, setNoteContent] = useState('')
+
+  useEffect(() => {
+    loadTodayNote()
+  }, [loadTodayNote])
+
+  useEffect(() => {
+    setNoteContent(todayNote?.content ?? '')
+  }, [todayNote])
 
   const { todayPresets, otherTasks } = useMemo(() => {
     const d = new Date()
@@ -146,6 +158,28 @@ export default function TasksPage() {
               />
               <button onClick={add} className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">
                 <PlusIcon className="h-4 w-4" /> Add
+              </button>
+            </div>
+          </div>
+
+          {/* Daily Diary */}
+          <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Daily Diary</h2>
+              <span className="text-xs text-black/50">Private note for today</span>
+            </div>
+            <textarea
+              value={noteContent}
+              onChange={(e) => setNoteContent(e.target.value)}
+              placeholder="How was your day? Thoughts, reflections, duas..."
+              className="w-full min-h-[120px] rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={async () => { await saveTodayNote(noteContent); toast({ type: 'success', message: 'Saved' }) }}
+                className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90"
+              >
+                Save
               </button>
             </div>
           </div>
