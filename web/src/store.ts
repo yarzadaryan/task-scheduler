@@ -40,6 +40,8 @@ interface State {
   loadTodayNote: () => Promise<void>
   saveTodayNote: (content: string) => Promise<void>
   loadNotes: () => Promise<void>
+  loadNoteByDate: (dateStartMs: number) => Promise<void>
+  saveNoteForDate: (dateStartMs: number, content: string) => Promise<void>
 }
 
 export const useStore = create<State>()(
@@ -129,6 +131,19 @@ export const useStore = create<State>()(
       async loadNotes() {
         const all = await getAllNotes()
         set({ notes: all })
+      },
+      async loadNoteByDate(dateStartMs: number) {
+        const existing = await getNoteByDate(dateStartMs)
+        set({ todayNote: existing ?? null })
+      },
+      async saveNoteForDate(dateStartMs: number, content: string) {
+        const now = Date.now()
+        const existing = await getNoteByDate(dateStartMs)
+        const note: DailyNote = existing
+          ? { ...existing, content, updatedAt: now }
+          : { id: crypto.randomUUID(), date: dateStartMs, content, createdAt: now, updatedAt: now }
+        await putNote(note)
+        set({ todayNote: note })
       },
     }),
     { name: 'tasks-ui-cache' }

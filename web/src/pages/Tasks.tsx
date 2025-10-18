@@ -19,12 +19,23 @@ export default function TasksPage() {
   const saveTodayNote = useStore((s) => s.saveTodayNote)
   const notes = useStore((s) => s.notes)
   const loadNotes = useStore((s) => s.loadNotes)
+  const loadNoteByDate = useStore((s) => s.loadNoteByDate)
+  const saveNoteForDate = useStore((s) => s.saveNoteForDate)
   const [noteContent, setNoteContent] = useState('')
+  const [selectedDate, setSelectedDate] = useState<number>(() => {
+    const d = new Date()
+    d.setHours(0,0,0,0)
+    return d.getTime()
+  })
 
   useEffect(() => {
-    loadTodayNote()
     loadNotes()
-  }, [loadTodayNote, loadNotes])
+  }, [loadNotes])
+
+  useEffect(() => {
+    // load note for the currently selected date
+    loadNoteByDate(selectedDate)
+  }, [selectedDate, loadNoteByDate])
 
   useEffect(() => {
     setNoteContent(todayNote?.content ?? '')
@@ -169,7 +180,7 @@ export default function TasksPage() {
           <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">Daily Diary</h2>
-              <span className="text-xs text-black/50">Private note for today</span>
+              <span className="text-xs text-black/50">Note for {new Date(selectedDate).toLocaleDateString()}</span>
             </div>
             <textarea
               value={noteContent}
@@ -179,7 +190,7 @@ export default function TasksPage() {
             />
             <div className="mt-3 flex justify-end">
               <button
-                onClick={async () => { await saveTodayNote(noteContent); await loadNotes(); toast({ type: 'success', message: 'Saved' }) }}
+                onClick={async () => { await saveNoteForDate(selectedDate, noteContent); await loadNotes(); toast({ type: 'success', message: 'Saved' }) }}
                 className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90"
               >
                 Save
@@ -221,8 +232,12 @@ export default function TasksPage() {
                 .sort((a, b) => b.date - a.date)
                 .map((n) => (
                   <li key={n.id} className="p-3">
-                    <div className="text-xs text-black/50 mb-1">{new Date(n.date).toLocaleDateString()}</div>
-                    <div className="whitespace-pre-wrap text-sm text-black/80">{n.content || <span className="text-black/40">(empty)</span>}</div>
+                    <button
+                      className={`text-sm underline underline-offset-4 ${selectedDate === n.date ? 'font-semibold' : ''}`}
+                      onClick={() => { setSelectedDate(n.date); toast({ type: 'info', message: `Opened ${new Date(n.date).toLocaleDateString()}` }) }}
+                    >
+                      {new Date(n.date).toLocaleDateString()}
+                    </button>
                   </li>
                 ))}
             </ul>
