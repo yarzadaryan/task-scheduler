@@ -22,7 +22,6 @@ export default function TimerPage() {
   const addEvent = useStore((s) => s.addEvent)
   const updateEvent = useStore((s) => s.updateEvent)
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
-  const [sessionTitle, setSessionTitle] = useState<string>('Work Session')
 
   useEffect(() => {
     if (!isRunning) return
@@ -39,7 +38,6 @@ export default function TimerPage() {
         setIsBreak((b) => !b)
         setTarget(nextTarget)
         const nextTitle = !isBreak ? 'Break Session' : 'Work Session'
-        setSessionTitle(nextTitle)
         // Start next session event
         addEvent({ title: nextTitle, start: Date.now(), allDay: false }).then((evt) => setActiveEventId(evt.id))
       }
@@ -57,7 +55,6 @@ export default function TimerPage() {
     }
     setIsRunning(true)
     const title = isBreak ? 'Break Session' : 'Work Session'
-    setSessionTitle(title)
     // If no active event, create one now
     if (!activeEventId) {
       addEvent({ title, start: Date.now(), allDay: false }).then((evt) => setActiveEventId(evt.id))
