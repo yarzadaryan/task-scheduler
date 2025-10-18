@@ -26,6 +26,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
+      {/* Clouds background behind the entire app */}
+      <div className="clouds-bg">
+        <div className="clouds-layer clouds-light layer-1" />
+        <div className="clouds-layer clouds-light layer-2" />
+        <div className="clouds-layer clouds-light layer-3" />
+        <div className="clouds-layer clouds-dark layer-2" />
+      </div>
       {!isHome && (
         <header className="sticky top-0 z-10 bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-b border-black/5 dark:bg-black/40 dark:border-white/10">
           <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
@@ -78,6 +85,7 @@ export default function App() {
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/timer" element={<TimerPage />} />
+                <Route path="/diary/:date" element={<DiaryPage />} />
               </Routes>
             </Suspense>
           </div>
