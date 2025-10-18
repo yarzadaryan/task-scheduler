@@ -74,3 +74,7 @@ export async function getAllNotes(): Promise<DailyNote[]> {
   const db = await getDB()
   return await db.getAll('notes')
 }
+export async function deleteNote(id: string) {
+  const db = await getDB()
+  await db.delete('notes', id)
+}

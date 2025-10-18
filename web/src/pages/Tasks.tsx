@@ -19,6 +19,7 @@ export default function TasksPage() {
   const loadNotes = useStore((s) => s.loadNotes)
   const loadNoteByDate = useStore((s) => s.loadNoteByDate)
   const saveNoteForDate = useStore((s) => s.saveNoteForDate)
+  const deleteNoteById = useStore((s) => s.deleteNoteById)
   const [noteContent, setNoteContent] = useState('')
   const [showSticky, setShowSticky] = useState(false)
   const [selectedDate, setSelectedDate] = useState<number>(() => {
@@ -230,13 +231,22 @@ export default function TasksPage() {
                 .slice()
                 .sort((a, b) => b.date - a.date)
                 .map((n) => (
-                  <li key={n.id} className="p-3">
+                  <li key={n.id} className="p-3 flex items-center justify-between">
                     <button
                       className={`text-sm underline underline-offset-4 ${selectedDate === n.date ? 'font-semibold' : ''}`}
                       onClick={() => { setSelectedDate(n.date); setShowSticky(true); toast({ type: 'info', message: `Opened ${new Date(n.date).toLocaleDateString()}` }) }}
                     >
                       {new Date(n.date).toLocaleDateString()}
                     </button>
+                    <button
+                      onClick={async () => {
+                        await deleteNoteById(n.id)
+                        if (todayNote?.id === n.id) { setShowSticky(false); setNoteContent('') }
+                        toast({ type: 'info', message: 'Deleted note' })
+                      }}
+                      className="text-xs text-red-600 hover:text-red-700"
+                      title="Delete note"
+                    >Delete</button>
                   </li>
                 ))}
             </ul>
@@ -250,7 +260,15 @@ export default function TasksPage() {
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-yellow-200/70 shadow-md rotate-[-3deg]" />
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold tracking-wide uppercase opacity-70">{new Date(selectedDate).toLocaleDateString()}</div>
-              <button onClick={() => setShowSticky(false)} className="text-sm px-2 py-1 rounded hover:bg-black/10">Close</button>
+              <div className="flex items-center gap-2">
+                {todayNote?.id && todayNote.date === selectedDate && (
+                  <button
+                    onClick={async () => { await deleteNoteById(todayNote.id); await loadNotes(); setShowSticky(false); setNoteContent(''); toast({ type: 'info', message: 'Deleted note' }) }}
+                    className="text-sm px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                  >Delete</button>
+                )}
+                <button onClick={() => setShowSticky(false)} className="text-sm px-2 py-1 rounded hover:bg-black/10">Close</button>
+              </div>
             </div>
             <textarea
               value={noteContent}
