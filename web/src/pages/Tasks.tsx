@@ -15,8 +15,6 @@ export default function TasksPage() {
   const [newPreset, setNewPreset] = useState('')
   const { toast } = useToast()
   const todayNote = useStore((s) => s.todayNote)
-  const loadTodayNote = useStore((s) => s.loadTodayNote)
-  const saveTodayNote = useStore((s) => s.saveTodayNote)
   const notes = useStore((s) => s.notes)
   const loadNotes = useStore((s) => s.loadNotes)
   const loadNoteByDate = useStore((s) => s.loadNoteByDate)
