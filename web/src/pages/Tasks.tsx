@@ -20,6 +20,7 @@ export default function TasksPage() {
   const loadNoteByDate = useStore((s) => s.loadNoteByDate)
   const saveNoteForDate = useStore((s) => s.saveNoteForDate)
   const [noteContent, setNoteContent] = useState('')
+  const [showSticky, setShowSticky] = useState(false)
   const [selectedDate, setSelectedDate] = useState<number>(() => {
     const d = new Date()
     d.setHours(0,0,0,0)
@@ -232,7 +233,7 @@ export default function TasksPage() {
                   <li key={n.id} className="p-3">
                     <button
                       className={`text-sm underline underline-offset-4 ${selectedDate === n.date ? 'font-semibold' : ''}`}
-                      onClick={() => { setSelectedDate(n.date); toast({ type: 'info', message: `Opened ${new Date(n.date).toLocaleDateString()}` }) }}
+                      onClick={() => { setSelectedDate(n.date); setShowSticky(true); toast({ type: 'info', message: `Opened ${new Date(n.date).toLocaleDateString()}` }) }}
                     >
                       {new Date(n.date).toLocaleDateString()}
                     </button>
@@ -242,6 +243,31 @@ export default function TasksPage() {
           </div>
         </div>
       </div>
+      {showSticky && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowSticky(false)} />
+          <div className="relative w-[min(90vw,520px)] rounded-md shadow-2xl rotate-1 bg-yellow-100 text-black p-4 sm:p-5">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-yellow-200/70 shadow-md rotate-[-3deg]" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold tracking-wide uppercase opacity-70">{new Date(selectedDate).toLocaleDateString()}</div>
+              <button onClick={() => setShowSticky(false)} className="text-sm px-2 py-1 rounded hover:bg-black/10">Close</button>
+            </div>
+            <textarea
+              value={noteContent}
+              onChange={(e) => setNoteContent(e.target.value)}
+              className="w-full min-h-[220px] bg-transparent outline-none resize-none text-sm leading-relaxed"
+              placeholder="Write your note..."
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <button onClick={() => setShowSticky(false)} className="text-sm px-3 py-1.5 rounded bg-black/10 hover:bg-black/15">Cancel</button>
+              <button
+                onClick={async () => { await saveNoteForDate(selectedDate, noteContent); await loadNotes(); toast({ type: 'success', message: 'Saved' }); setShowSticky(false) }}
+                className="text-sm px-3 py-1.5 rounded bg-black text-white hover:bg-black/90"
+              >Save</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
