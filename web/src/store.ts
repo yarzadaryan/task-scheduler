@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { CalEvent, Task, ID } from './types'
-import { deleteEvent, deleteTask, getAllEvents, getAllTasks, putEvent, putTask, getNoteByDate, putNote } from './data/db'
+import { deleteEvent, deleteTask, getAllEvents, getAllTasks, putEvent, putTask, getNoteByDate, putNote, getAllNotes } from './data/db'
 import type { DailyNote } from './types'
 
 const DEFAULT_PRESETS = ['Pray', 'Gym', 'Eat'] as const
@@ -23,6 +23,7 @@ interface State {
   events: CalEvent[]
   presets: string[]
   todayNote: DailyNote | null
+  notes: DailyNote[]
   load: () => Promise<void>
   // tasks
   addTask: (t: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Task>
@@ -38,6 +39,7 @@ interface State {
   // daily note
   loadTodayNote: () => Promise<void>
   saveTodayNote: (content: string) => Promise<void>
+  loadNotes: () => Promise<void>
 }
 
 export const useStore = create<State>()(
@@ -48,6 +50,7 @@ export const useStore = create<State>()(
       events: [],
       presets: [...DEFAULT_PRESETS],
       todayNote: null,
+      notes: [],
       async load() {
         const [tasks, events] = await Promise.all([getAllTasks(), getAllEvents()])
         set({ tasks, events, loaded: true })
@@ -122,6 +125,10 @@ export const useStore = create<State>()(
           : { id: crypto.randomUUID(), date: s, content, createdAt: now, updatedAt: now }
         await putNote(note)
         set({ todayNote: note })
+      },
+      async loadNotes() {
+        const all = await getAllNotes()
+        set({ notes: all })
       },
     }),
     { name: 'tasks-ui-cache' }

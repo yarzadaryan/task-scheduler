@@ -17,11 +17,14 @@ export default function TasksPage() {
   const todayNote = useStore((s) => s.todayNote)
   const loadTodayNote = useStore((s) => s.loadTodayNote)
   const saveTodayNote = useStore((s) => s.saveTodayNote)
+  const notes = useStore((s) => s.notes)
+  const loadNotes = useStore((s) => s.loadNotes)
   const [noteContent, setNoteContent] = useState('')
 
   useEffect(() => {
     loadTodayNote()
-  }, [loadTodayNote])
+    loadNotes()
+  }, [loadTodayNote, loadNotes])
 
   useEffect(() => {
     setNoteContent(todayNote?.content ?? '')
@@ -176,7 +179,7 @@ export default function TasksPage() {
             />
             <div className="mt-3 flex justify-end">
               <button
-                onClick={async () => { await saveTodayNote(noteContent); toast({ type: 'success', message: 'Saved' }) }}
+                onClick={async () => { await saveTodayNote(noteContent); await loadNotes(); toast({ type: 'success', message: 'Saved' }) }}
                 className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90"
               >
                 Save
@@ -203,6 +206,25 @@ export default function TasksPage() {
                   <button onClick={async () => { await removeTask(t.id); toast({ type: 'info', message: 'Deleted' }) }} className="text-xs text-red-600 hover:text-red-700">Delete</button>
                 </li>
               ))}
+            </ul>
+          </div>
+          {/* Diary History */}
+          <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Diary History</h2>
+              <span className="text-xs text-black/50">Recent notes</span>
+            </div>
+            <ul className="divide-y divide-black/5">
+              {notes.length === 0 && <li className="p-3 text-sm text-black/60">No entries yet</li>}
+              {notes
+                .slice()
+                .sort((a, b) => b.date - a.date)
+                .map((n) => (
+                  <li key={n.id} className="p-3">
+                    <div className="text-xs text-black/50 mb-1">{new Date(n.date).toLocaleDateString()}</div>
+                    <div className="whitespace-pre-wrap text-sm text-black/80">{n.content || <span className="text-black/40">(empty)</span>}</div>
+                  </li>
+                ))}
             </ul>
           </div>
         </div>

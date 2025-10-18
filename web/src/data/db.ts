@@ -70,3 +70,7 @@ export async function getNoteByDate(dateStartMs: number): Promise<DailyNote | un
   const res = await idx.get(range)
   return res ?? undefined
 }
+export async function getAllNotes(): Promise<DailyNote[]> {
+  const db = await getDB()
+  return await db.getAll('notes')
+}
