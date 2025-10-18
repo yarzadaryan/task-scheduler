@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Task Scheduler',
-        short_name: 'Tasks',
+        name: 'Himmah',
+        short_name: 'Himmah',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

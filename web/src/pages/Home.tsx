@@ -12,7 +12,7 @@ export default function HomePage() {
       {/* Centered pulsating title */}
       <div className="relative min-h-screen flex flex-col items-center justify-center gap-8 px-4">
         <h1 className="text-6xl md:text-7xl font-black tracking-tight animate-pulse text-black">
-          Task Manager
+          Himmah
         </h1>
         <Link
           to="/tasks"
