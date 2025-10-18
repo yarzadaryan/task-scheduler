@@ -10,7 +10,7 @@ export default function HomePage() {
 
       {/* Centered pulsating title */}
       <div className="relative min-h-screen flex flex-col items-center justify-center gap-8 px-4">
-        <h1 className="text-8xl md:text-9xl font-black tracking-tight animate-pulse text-black">
+        <h1 className="text-6xl md:text-7xl font-black tracking-tight animate-pulse text-black">
           Task Manager
         </h1>
         <Link

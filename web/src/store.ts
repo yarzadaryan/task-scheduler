@@ -3,6 +3,19 @@ import { persist } from 'zustand/middleware'
 import type { CalEvent, Task, ID } from './types'
 import { deleteEvent, deleteTask, getAllEvents, getAllTasks, putEvent, putTask } from './data/db'
 
+export const DAILY_PRESETS = ['Pray', 'Gym', 'Eat'] as const
+
+function startOfToday() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+function endOfToday() {
+  const d = new Date()
+  d.setHours(23, 59, 59, 999)
+  return d.getTime()
+}
+
 interface State {
   loaded: boolean
   tasks: Task[]
@@ -26,6 +39,14 @@ export const useStore = create<State>()(
       async load() {
         const [tasks, events] = await Promise.all([getAllTasks(), getAllEvents()])
         set({ tasks, events, loaded: true })
+        const s = startOfToday()
+        const e = endOfToday()
+        for (const title of DAILY_PRESETS) {
+          const exists = get().tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= s && (t.dueAt ?? 0) <= e)
+          if (!exists) {
+            await get().addTask({ title, dueAt: s })
+          }
+        }
       },
       async addTask(t) {
         const now = Date.now()
