@@ -1,6 +1,29 @@
 import { Link } from 'react-router-dom'
 import { CalendarIcon, CheckSquareIcon, TimerIcon } from 'lucide-react'
 
+const dailyHadith = (() => {
+  const hadiths: { text: string; source: string }[] = [
+    {
+      text:
+        'Actions are but by intentions, and every person will have only what they intended.',
+      source: 'Sahih al-Bukhari & Sahih Muslim',
+    },
+    {
+      text:
+        'The strong believer is better and more beloved to Allah than the weak believer, while there is good in both. Be eager for what benefits you, seek help from Allah, and do not be helpless.',
+      source: 'Sahih Muslim 2664',
+    },
+    {
+      text:
+        'The most beloved deeds to Allah are those done regularly, even if they are few.',
+      source: 'Sahih al-Bukhari 6465',
+    },
+  ]
+  const now = new Date()
+  const idx = (now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate()) % hadiths.length
+  return hadiths[idx]
+})()
+
 export default function HomePage() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-white">
@@ -14,6 +37,7 @@ export default function HomePage() {
         <h1 className="text-6xl md:text-7xl font-black tracking-tight animate-pulse text-black">
           Himmah
         </h1>
+        <p className="text-black/70 text-base md:text-lg -mt-2">Strength. Resolve. Ability.</p>
         <Link
           to="/tasks"
           className="px-8 py-3 rounded-2xl bg-black text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.03]"
@@ -61,9 +85,12 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Motivation note */}
-      <div className="relative pb-10">
-        <p className="text-center text-sm text-black/60 px-4">Small consistent check‑ins beat occasional big efforts. Show up today.</p>
+      {/* Motivation note (daily hadith) */}
+      <div className="relative pb-10 px-4">
+        <figure className="mx-auto max-w-3xl text-center">
+          <blockquote className="text-sm md:text-base text-black/75 leading-relaxed">“{dailyHadith.text}”</blockquote>
+          <figcaption className="mt-2 text-xs text-black/50">{dailyHadith.source}</figcaption>
+        </figure>
       </div>
     </div>
   )
