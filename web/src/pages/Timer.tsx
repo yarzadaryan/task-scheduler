@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PlayIcon, PauseIcon, RotateCcwIcon } from 'lucide-react'
+import { useToast } from '../ui/toast'
 
 function format(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -16,6 +17,7 @@ export default function TimerPage() {
   const [target, setTarget] = useState<number | null>(null)
   const tickRef = useRef<number | null>(null)
   const remaining = useMemo(() => (target ? target - Date.now() : workMin * 60_000), [target, workMin])
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!isRunning) return
@@ -40,6 +42,7 @@ export default function TimerPage() {
       setTarget(Date.now() + workMin * 60_000)
     }
     setIsRunning(true)
+    toast({ type: 'success', message: isBreak ? 'Resumed break' : 'Started work' })
   }
   function pause() {
     setIsRunning(false)
@@ -47,11 +50,13 @@ export default function TimerPage() {
       const rem = Math.max(0, target - Date.now())
       setTarget(Date.now() + rem)
     }
+    toast({ type: 'info', message: 'Paused' })
   }
   function reset() {
     setIsRunning(false)
     setIsBreak(false)
     setTarget(null)
+    toast({ type: 'info', message: 'Reset' })
   }
 
   function notify(body: string) {
@@ -62,6 +67,7 @@ export default function TimerPage() {
         Notification.requestPermission()
       }
     }
+    toast({ type: 'success', message: body })
   }
 
   return (

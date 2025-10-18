@@ -3,6 +3,8 @@ import { BellIcon, CalendarIcon, CheckSquareIcon, TimerIcon } from 'lucide-react
 import { Suspense, lazy, useEffect, useMemo } from 'react'
 import { useStore } from './store'
 import { getNotificationPermission, requestNotificationPermission } from './lib/notifications'
+import { ToastViewport } from './ui/toast'
+import { useTheme } from './ui/theme'
 
 const HomePage = lazy(() => import('./pages/Home'))
 const CalendarPage = lazy(() => import('./pages/Calendar'))
@@ -13,6 +15,7 @@ export default function App() {
   const load = useStore((s) => s.load)
   const location = useLocation()
   const isHome = location.pathname === '/'
+  const [theme, setTheme] = useTheme()
   
   useEffect(() => {
     load()
@@ -23,7 +26,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       {!isHome && (
-        <header className="sticky top-0 z-10 bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-b border-black/5">
+        <header className="sticky top-0 z-10 bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-b border-black/5 dark:bg-black/40 dark:border-white/10">
           <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
             <Link to="/" className="text-xl font-semibold tracking-tight">Himmah</Link>
             <nav className="flex items-center gap-4 text-sm">
@@ -48,12 +51,19 @@ export default function App() {
             {notifPerm !== 'granted' && notifPerm !== 'unsupported' && (
               <button
                 onClick={() => requestNotificationPermission()}
-                className="inline-flex items-center gap-1 rounded-md border border-black/10 bg-white/70 px-3 py-1.5 hover:bg-white"
+                className="inline-flex items-center gap-1 rounded-md border border-black/10 bg-white/70 px-3 py-1.5 hover:bg-white dark:bg-black/30 dark:text-white dark:border-white/10"
                 title="Enable notifications"
               >
                 <BellIcon className="h-4 w-4" /> Enable
               </button>
             )}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="inline-flex items-center gap-1 rounded-md border border-black/10 bg-white/70 px-3 py-1.5 hover:bg-white dark:bg-black/30 dark:text-white dark:border-white/10"
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
           </nav>
         </div>
         </header>
@@ -82,6 +92,7 @@ export default function App() {
           </Suspense>
         )}
       </main>
+      <ToastViewport />
     </div>
   )
 }

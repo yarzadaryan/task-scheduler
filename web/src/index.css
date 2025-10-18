@@ -9,22 +9,34 @@
     --muted: 107 114 128;
   }
 
+  .dark :root {
+    --bg: 17 24 39;
+    --fg: 243 244 246;
+    --muted: 156 163 175;
+  }
+
   html, body, #root {
     height: 100%;
   }
 
   body {
     @apply min-h-screen;
-    background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.98) 0%, 
-      rgba(252, 252, 255, 0.99) 25%,
-      rgba(255, 255, 255, 0.99) 50%,
-      rgba(252, 252, 255, 0.99) 75%,
-      rgba(255, 255, 255, 0.98) 100%
+    background: linear-gradient(135deg,
+      rgba(255,255,255,0.98) 0%,
+      rgba(252,252,255,0.99) 25%,
+      rgba(255,255,255,0.99) 50%,
+      rgba(252,252,255,0.99) 75%,
+      rgba(255,255,255,0.98) 100%
     );
     background-attachment: fixed;
     color: rgb(var(--fg));
     position: relative;
+  }
+
+  .dark body {
+    background: radial-gradient(1200px 600px at 20% -10%, rgba(15,23,42,0.8), transparent),
+      radial-gradient(1000px 500px at 100% 10%, rgba(17,24,39,0.7), transparent),
+      linear-gradient(180deg, rgba(2,6,23,1) 0%, rgba(17,24,39,1) 50%, rgba(2,6,23,1) 100%);
   }
 
   body::before {
@@ -45,7 +57,14 @@
     backdrop-filter: blur(100px);
   }
 
-  a {
-    @apply text-blue-600 hover:text-blue-700 underline underline-offset-4;
+  .dark body::before {
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(255,255,255,0.04) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 40%),
+      radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
   }
+
+  a { @apply text-blue-600 hover:text-blue-700 underline underline-offset-4; }
+  .dark a { @apply text-blue-400 hover:text-blue-300; }
 }

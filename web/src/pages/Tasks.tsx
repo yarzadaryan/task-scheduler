@@ -1,13 +1,19 @@
 import { useMemo, useState } from 'react'
 import { PlusIcon } from 'lucide-react'
-import { useStore, DAILY_PRESETS } from '../store'
+import { useStore } from '../store'
+import { useToast } from '../ui/toast'
 
 export default function TasksPage() {
   const tasks = useStore((s) => s.tasks)
   const addTask = useStore((s) => s.addTask)
   const toggleTask = useStore((s) => s.toggleTask)
   const removeTask = useStore((s) => s.removeTask)
+  const presets = useStore((s) => s.presets)
+  const addPreset = useStore((s) => s.addPreset)
+  const removePreset = useStore((s) => s.removePreset)
   const [title, setTitle] = useState('')
+  const [newPreset, setNewPreset] = useState('')
+  const { toast } = useToast()
 
   const { todayPresets, otherTasks } = useMemo(() => {
     const d = new Date()
@@ -17,17 +23,44 @@ export default function TasksPage() {
 
     const isToday = (ms?: number | null) => typeof ms === 'number' && ms >= start && ms <= end
 
-    const presetSet = new Set<string>(DAILY_PRESETS as unknown as string[])
+    const presetSet = new Set<string>(presets)
     const todays = tasks.filter((t) => presetSet.has(t.title) && isToday(t.dueAt ?? null))
     const others = tasks.filter((t) => !(presetSet.has(t.title) && isToday(t.dueAt ?? null)))
     return { todayPresets: todays, otherTasks: others }
-  }, [tasks])
+  }, [tasks, presets])
+
+  function dayStart(ts: number) {
+    const d = new Date(ts)
+    d.setHours(0,0,0,0)
+    return d.getTime()
+  }
+
+  const streakByTitle = useMemo(() => {
+    const map = new Map<string, number>()
+    const today = dayStart(Date.now())
+    for (const title of presets) {
+      let streak = 0
+      let cursor = today
+      // keep going back while each day has a completed task for this title
+      // cap at 365 for safety
+      for (let i = 0; i < 365; i++) {
+        const nextDay = cursor + 24*60*60*1000 - 1
+        const hasCompleted = tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= cursor && (t.dueAt ?? 0) <= nextDay && !!t.completedAt)
+        if (!hasCompleted) break
+        streak += 1
+        cursor -= 24*60*60*1000
+      }
+      map.set(title, streak)
+    }
+    return map
+  }, [tasks, presets])
 
   async function add() {
     const t = title.trim()
     if (!t) return
     await addTask({ title: t })
     setTitle('')
+    toast({ type: 'success', title: 'Task added', message: t })
   }
 
   const completedToday = todayPresets.filter((t) => !!t.completedAt).length
@@ -60,12 +93,41 @@ export default function TasksPage() {
                     <input
                       type="checkbox"
                       checked={!!t.completedAt}
-                      onChange={() => toggleTask(t.id)}
+                      onChange={async () => { await toggleTask(t.id); toast({ type: 'success', message: t.completedAt ? 'Marked incomplete' : 'Checked in!' }) }}
                       className="h-4 w-4 rounded border-black/20 text-blue-600 focus:ring-blue-500/30"
                     />
                     <span className={t.completedAt ? 'line-through text-black/50' : ''}>{t.title}</span>
+                    <span className="ml-2 text-xs rounded-full bg-black/5 px-2 py-0.5 text-black/70">{streakByTitle.get(t.title) || 0}d</span>
                   </label>
-                  <button onClick={() => removeTask(t.id)} className="text-xs text-red-600 hover:text-red-700">Delete</button>
+                  <button onClick={async () => { await removeTask(t.id); toast({ type: 'info', message: 'Deleted' }) }} className="text-xs text-red-600 hover:text-red-700">Delete</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Preset management */}
+          <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Presets</h2>
+              <span className="text-xs text-black/50">Daily check-ins</span>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <input
+                value={newPreset}
+                onChange={(e) => setNewPreset(e.target.value)}
+                placeholder="Add preset (e.g., Read)"
+                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20"
+                onKeyDown={(e) => e.key === 'Enter' && (() => { const v = newPreset.trim(); if (!v) return; addPreset(v); setNewPreset(''); toast({ type: 'success', message: 'Preset added' }) })()}
+              />
+              <button onClick={() => { const v = newPreset.trim(); if (!v) return; addPreset(v); setNewPreset(''); toast({ type: 'success', message: 'Preset added' }) }} className="inline-flex items-center gap-1 rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">
+                <PlusIcon className="h-4 w-4" /> Add
+              </button>
+            </div>
+            <ul className="divide-y divide-black/5">
+              {presets.length === 0 && <li className="p-3 text-sm text-black/60">No presets</li>}
+              {presets.map((p) => (
+                <li key={p} className="flex items-center justify-between p-3 text-sm">
+                  <span>{p}</span>
+                  <button onClick={() => { removePreset(p); toast({ type: 'info', message: 'Preset removed' }) }} className="text-xs text-red-600 hover:text-red-700">Remove</button>
                 </li>
               ))}
             </ul>
@@ -104,7 +166,7 @@ export default function TasksPage() {
                     />
                     <span className={t.completedAt ? 'line-through text-black/50' : ''}>{t.title}</span>
                   </label>
-                  <button onClick={() => removeTask(t.id)} className="text-xs text-red-600 hover:text-red-700">Delete</button>
+                  <button onClick={async () => { await removeTask(t.id); toast({ type: 'info', message: 'Deleted' }) }} className="text-xs text-red-600 hover:text-red-700">Delete</button>
                 </li>
               ))}
             </ul>
