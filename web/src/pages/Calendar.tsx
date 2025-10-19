@@ -3,18 +3,29 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { useMemo, useState } from 'react'
+import { Button, ButtonGroup, Checkbox, InlineStack, Select, TextField } from '@shopify/polaris'
 import dayjs from 'dayjs'
 import type { EventClickArg } from '@fullcalendar/core/index.js'
 import type { DateClickArg } from '@fullcalendar/interaction'
 import { useStore } from '../store'
 
-function QuickAdd() {
+function QuickAdd({ date, onDateChange }: { date: string; onDateChange: (v: string) => void }) {
   const addEvent = useStore((s) => s.addEvent)
   const [title, setTitle] = useState('')
-  const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [allDay, setAllDay] = useState(true)
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
+  const timeOptions = useMemo(() => {
+    const arr: string[] = []
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const hh = String(h).padStart(2, '0')
+        const mm = String(m).padStart(2, '0')
+        arr.push(`${hh}:${mm}`)
+      }
+    }
+    return arr
+  }, [])
 
   function toMs(dateStr: string, timeStr: string) {
     const [y,m,d] = dateStr.split('-').map(Number)
@@ -23,8 +34,8 @@ function QuickAdd() {
     return dt.getTime()
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  async function submit(e?: React.FormEvent) {
+    if (e) e.preventDefault()
     const t = title.trim()
     if (!t) return
     if (allDay) {
@@ -38,33 +49,33 @@ function QuickAdd() {
   }
 
   return (
-    <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-      <div className="md:col-span-2">
-        <label className="block text-xs text-black/60 mb-1">Title</label>
-        <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="e.g., Work, Fasting" className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-      </div>
-      <div>
-        <label className="block text-xs text-black/60 mb-1">Date</label>
-        <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none" />
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="inline-flex items-center gap-2 text-xs text-black/70"><input type="checkbox" checked={allDay} onChange={(e)=>setAllDay(e.target.checked)} /> All-day</label>
-      </div>
-      {!allDay && (
-        <div className="md:col-span-2 grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs text-black/60 mb-1">Start</label>
-            <input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs text-black/60 mb-1">End</label>
-            <input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 shadow-sm outline-none" />
-          </div>
+    <form onSubmit={submit} className="w-full">
+      <InlineStack gap="200" align="space-between" blockAlign="end" wrap>
+        <div style={{minWidth: 260}}>
+          <TextField label="Title" autoComplete="off" value={title} onChange={setTitle} placeholder="e.g., Work, Fasting" />
         </div>
-      )}
-      <div className="md:col-span-1">
-        <button type="submit" className="w-full rounded-xl bg-black text-white px-4 py-2 hover:bg-black/90">Add</button>
-      </div>
+        <div>
+          <TextField label="Date" type="date" value={date} onChange={onDateChange} autoComplete="off" />
+        </div>
+        <div>
+          <Checkbox label="All-day" checked={allDay} onChange={setAllDay} />
+        </div>
+        {!allDay && (
+          <>
+            <div>
+              <Select label="Start" options={timeOptions.map((t)=>({label:t, value:t}))} value={startTime} onChange={setStartTime} />
+            </div>
+            <div>
+              <Select label="End" options={timeOptions.map((t)=>({label:t, value:t}))} value={endTime} onChange={setEndTime} />
+            </div>
+          </>
+        )}
+        <div>
+          <Button variant="primary" onClick={()=>submit()}>
+            Add
+          </Button>
+        </div>
+      </InlineStack>
     </form>
   )
 }
@@ -73,6 +84,7 @@ export default function CalendarPage() {
   const events = useStore((s) => s.events)
   const addEvent = useStore((s) => s.addEvent)
   const removeEvent = useStore((s) => s.removeEvent)
+  const [quickDate, setQuickDate] = useState<string>(() => new Date().toISOString().slice(0,10))
 
   const fcBaseEvents = useMemo(
     () =>
@@ -165,20 +177,97 @@ export default function CalendarPage() {
   }, [fcBaseEvents, holidayEvents])
 
   function CalToolbar() {
+    const updateEvent = useStore((s) => s.updateEvent)
     const selected = selectedEventId ? events.find((e) => e.id === selectedEventId) : null
+    const [etitle, setEtitle] = useState<string>(selected?.title ?? '')
+    const [edate, setEdate] = useState<string>(() => selected ? dayjs(selected.start).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'))
+    const [eAllDay, setEAllDay] = useState<boolean>(selected?.allDay ?? true)
+    const [eStart, setEStart] = useState<string>(() => selected ? dayjs(selected.start).format('HH:mm') : '09:00')
+    const [eEnd, setEEnd] = useState<string>(() => selected?.end ? dayjs(selected.end).format('HH:mm') : '10:00')
+
+    // sync when selection changes
+    const timeOptions = useMemo(() => {
+      const arr: string[] = []
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          const hh = String(h).padStart(2, '0')
+          const mm = String(m).padStart(2, '0')
+          arr.push(`${hh}:${mm}`)
+        }
+      }
+      return arr
+    }, [])
+
+    function toMs(dateStr: string, timeStr: string) {
+      const [y,m,d] = dateStr.split('-').map(Number)
+      const [hh,mm] = timeStr.split(':').map(Number)
+      return new Date(y, (m-1), d, hh ?? 0, mm ?? 0, 0, 0).getTime()
+    }
+
+    async function save() {
+      if (!selected) return
+      const patch: any = { title: etitle }
+      if (eAllDay) {
+        patch.start = toMs(edate, '00:00')
+        patch.end = undefined
+        patch.allDay = true
+      } else {
+        const s = toMs(edate, eStart)
+        const e = toMs(edate, eEnd)
+        patch.start = s
+        patch.end = Math.max(e, s + 15*60*1000)
+        patch.allDay = false
+      }
+      await updateEvent(selected.id, patch)
+    }
+
+    async function del() {
+      if (!selectedEventId) return
+      await removeEvent(selectedEventId)
+      setSelectedEventId(null)
+    }
+
+    // refresh state when selected changes
+    useMemo(() => {
+      setEtitle(selected?.title ?? '')
+      setEdate(selected ? dayjs(selected.start).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'))
+      setEAllDay(selected?.allDay ?? true)
+      setEStart(selected ? dayjs(selected.start).format('HH:mm') : '09:00')
+      setEEnd(selected?.end ? dayjs(selected.end).format('HH:mm') : '10:00')
+      return null
+    }, [selected?.id])
+
     return (
-      <div className="flex items-center gap-2">
+      <div style={{width:'100%'}}>
         {selected ? (
-          <div className="text-xs text-black/60 hidden md:block">Selected: <span className="font-medium">{selected.title}</span></div>
+          <InlineStack gap="200" align="end" blockAlign="end" wrap>
+            <div style={{minWidth: 220}}>
+              <TextField label="Title" value={etitle} onChange={setEtitle} autoComplete="off" />
+            </div>
+            <div>
+              <TextField label="Date" type="date" value={edate} onChange={setEdate} autoComplete="off" />
+            </div>
+            <div>
+              <Checkbox label="All-day" checked={eAllDay} onChange={setEAllDay} />
+            </div>
+            {!eAllDay && (
+              <>
+                <div>
+                  <Select label="Start" options={timeOptions.map((t)=>({label:t, value:t}))} value={eStart} onChange={setEStart} />
+                </div>
+                <div>
+                  <Select label="End" options={timeOptions.map((t)=>({label:t, value:t}))} value={eEnd} onChange={setEEnd} />
+                </div>
+              </>
+            )}
+            <ButtonGroup>
+              <Button tone="critical" onClick={del}>Delete</Button>
+              <Button variant="primary" onClick={save}>Save</Button>
+            </ButtonGroup>
+          </InlineStack>
         ) : (
           <div className="text-xs text-black/40 hidden md:block">Select an event to manage</div>
         )}
-        <button
-          onClick={async () => { if (!selectedEventId) return; await removeEvent(selectedEventId); setSelectedEventId(null) }}
-          disabled={!selectedEventId}
-          className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 border ${selectedEventId ? 'bg-red-600 text-white border-red-700 hover:bg-red-700' : 'bg-white text-black/40 border-black/10 cursor-not-allowed'}`}
-          title="Delete selected event"
-        >Delete</button>
       </div>
     )
   }
@@ -195,9 +284,14 @@ export default function CalendarPage() {
       {/* Quick add form */}
       <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <QuickAdd />
+          <QuickAdd date={quickDate} onDateChange={setQuickDate} />
           <CalToolbar />
         </div>
+        {hijriLabel && (
+          <div className="mt-2 w-full flex justify-center">
+            <div className="text-xs text-black/70 px-3 py-1 rounded-full border border-black/10 bg-white/70">Hijrah: <span className="font-medium">{hijriLabel}</span></div>
+          </div>
+        )}
       </div>
 
       <div className="relative rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-3 shadow-sm">
@@ -230,33 +324,7 @@ export default function CalendarPage() {
             setSelectedEventId(null)
           }}
           dateClick={(info: DateClickArg) => {
-            const title = prompt('New event title?')?.trim()
-            if (!title) return
-            const time = prompt('Time (HH:MM-HH:MM) or leave blank for all-day:')?.trim()
-            function parseTime(str: string): [number, number] | null {
-              const m = str.match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/)
-              if (!m) return null
-              const [ , sh, sm, eh, em ] = m
-              const sH = Math.min(23, Math.max(0, Number(sh)))
-              const sM = Math.min(59, Math.max(0, Number(sm)))
-              const eH = Math.min(23, Math.max(0, Number(eh)))
-              const eM = Math.min(59, Math.max(0, Number(em)))
-              const base = new Date(info.dateStr)
-              const start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sH, sM, 0, 0).getTime()
-              const end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eH, eM, 0, 0).getTime()
-              return [start, Math.max(end, start + 15*60*1000)]
-            }
-            if (time) {
-              const parsed = parseTime(time)
-              if (parsed) {
-                const [start, end] = parsed
-                addEvent({ title, start, end, allDay: false })
-              } else {
-                alert('Invalid time. Example: 09:00-10:30')
-              }
-            } else {
-              addEvent({ title, start: dayjs(info.dateStr).valueOf(), allDay: true })
-            }
+            setQuickDate(dayjs(info.dateStr).format('YYYY-MM-DD'))
           }}
           select={(sel) => {
             const raw = prompt('Add tags for these days (comma-separated):')?.trim()
@@ -274,11 +342,7 @@ export default function CalendarPage() {
             setSelectedEventId(info.event.id)
           }}
         />
-        {hijriLabel && (
-          <div className="pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 mt-1 text-xs text-black/60">
-            <span className="align-middle">Hijri:</span> <span className="font-medium">{hijriLabel}</span>
-          </div>
-        )}
+        {/* Hijrah label moved to toolbar card above for alignment */}
       </div>
     </div>
   )
