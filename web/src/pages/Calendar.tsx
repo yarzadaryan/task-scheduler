@@ -3,13 +3,13 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { useMemo, useState } from 'react'
-import { Button, ButtonGroup, Checkbox, InlineStack, Select, TextField } from '@shopify/polaris'
+import { Banner, Button, ButtonGroup, Checkbox, InlineStack, Select, TextField } from '@shopify/polaris'
 import dayjs from 'dayjs'
 import type { EventClickArg } from '@fullcalendar/core/index.js'
 import type { DateClickArg } from '@fullcalendar/interaction'
 import { useStore } from '../store'
 
-function QuickAdd({ date, onDateChange }: { date: string; onDateChange: (v: string) => void }) {
+function QuickAdd({ date, onDateChange, onSuccess }: { date: string; onDateChange: (v: string) => void; onSuccess: (msg: string) => void }) {
   const addEvent = useStore((s) => s.addEvent)
   const [title, setTitle] = useState('')
   const [allDay, setAllDay] = useState(true)
@@ -46,6 +46,7 @@ function QuickAdd({ date, onDateChange }: { date: string; onDateChange: (v: stri
       await addEvent({ title: t, start, end, allDay: false })
     }
     setTitle('')
+    onSuccess('Event added')
   }
 
   return (
@@ -84,7 +85,12 @@ export default function CalendarPage() {
   const events = useStore((s) => s.events)
   const addEvent = useStore((s) => s.addEvent)
   const removeEvent = useStore((s) => s.removeEvent)
+  const method = useStore((s) => s.prayerMethod)
+  const madhab = useStore((s) => s.prayerMadhab)
+  const setMethod = useStore((s) => s.setPrayerMethod)
+  const setMadhab = useStore((s) => s.setPrayerMadhab)
   const [quickDate, setQuickDate] = useState<string>(() => new Date().toISOString().slice(0,10))
+  const [banner, setBanner] = useState<{ tone: 'success' | 'critical' | 'info'; message: string } | null>(null)
 
   const fcBaseEvents = useMemo(
     () =>
@@ -219,12 +225,14 @@ export default function CalendarPage() {
         patch.allDay = false
       }
       await updateEvent(selected.id, patch)
+      setBanner({ tone: 'success', message: 'Event saved' })
     }
 
     async function del() {
       if (!selectedEventId) return
       await removeEvent(selectedEventId)
       setSelectedEventId(null)
+      setBanner({ tone: 'critical', message: 'Event deleted' })
     }
 
     // refresh state when selected changes
@@ -284,12 +292,48 @@ export default function CalendarPage() {
       {/* Quick add form */}
       <div className="rounded-2xl border border-black/5 bg-white/70 backdrop-blur p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <QuickAdd date={quickDate} onDateChange={setQuickDate} />
+          <QuickAdd date={quickDate} onDateChange={setQuickDate} onSuccess={(m)=>setBanner({tone:'success', message:m})} />
           <CalToolbar />
         </div>
         {hijriLabel && (
-          <div className="mt-2 w-full flex justify-center">
+          <div className="mt-2 w-full flex flex-col items-center gap-3">
             <div className="text-xs text-black/70 px-3 py-1 rounded-full border border-black/10 bg-white/70">Hijrah: <span className="font-medium">{hijriLabel}</span></div>
+            <InlineStack gap="200" align="center" wrap>
+              <div style={{minWidth: 220}}>
+                <Select
+                  label="Prayer method"
+                  options={[
+                    {label:'North America (ISNA)', value:'NorthAmerica'},
+                    {label:'Muslim World League', value:'MuslimWorldLeague'},
+                    {label:'Umm al-Qura', value:'UmmAlQura'},
+                    {label:'Egyptian', value:'Egyptian'},
+                    {label:'Karachi', value:'Karachi'},
+                    {label:'Dubai', value:'Dubai'},
+                    {label:'Qatar', value:'Qatar'},
+                    {label:'Moonsighting Committee', value:'MoonsightingCommittee'},
+                    {label:'Kuwait', value:'Kuwait'},
+                    {label:'Singapore', value:'Singapore'},
+                    {label:'Turkey', value:'Turkey'},
+                    {label:'Tehran', value:'Tehran'},
+                  ]}
+                  value={method}
+                  onChange={setMethod}
+                />
+              </div>
+              <div style={{minWidth: 160}}>
+                <Select
+                  label="Madhab"
+                  options={[{label:'Shafi', value:'Shafi'}, {label:'Hanafi', value:'Hanafi'}]}
+                  value={madhab}
+                  onChange={setMadhab}
+                />
+              </div>
+            </InlineStack>
+          </div>
+        )}
+        {banner && (
+          <div className="mt-3">
+            <Banner tone={banner.tone} title={banner.message} onDismiss={()=>setBanner(null)} />
           </div>
         )}
       </div>

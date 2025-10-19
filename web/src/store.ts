@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { CalEvent, Task, ID } from './types'
 import { deleteEvent, deleteTask, getAllEvents, getAllTasks, putEvent, putTask, getNoteByDate, putNote, getAllNotes, deleteNote } from './data/db'
 import type { DailyNote } from './types'
+import { getTodaysPrayerTimesMs, type MethodKey, type MadhabKey } from './utils/prayerTimes'
 
 const DEFAULT_PRESETS = ['Pray', 'Gym', 'Eat'] as const
 
@@ -22,6 +23,8 @@ interface State {
   tasks: Task[]
   events: CalEvent[]
   presets: string[]
+  prayerMethod: MethodKey
+  prayerMadhab: MadhabKey
   todayNote: DailyNote | null
   notes: DailyNote[]
   load: () => Promise<void>
@@ -37,6 +40,10 @@ interface State {
   addPreset: (title: string) => void
   removePreset: (title: string) => void
   reorderPresets: (from: number, to: number) => void
+  // prayer settings
+  setPrayerMethod: (m: MethodKey) => Promise<void>
+  setPrayerMadhab: (m: MadhabKey) => Promise<void>
+  recomputeTodayPrayers: () => Promise<void>
   // daily note
   loadTodayNote: () => Promise<void>
   saveTodayNote: (content: string) => Promise<void>
@@ -53,6 +60,8 @@ export const useStore = create<State>()(
       tasks: [],
       events: [],
       presets: [...DEFAULT_PRESETS],
+      prayerMethod: 'NorthAmerica',
+      prayerMadhab: 'Shafi',
       todayNote: null,
       notes: [],
       async load() {
@@ -60,12 +69,49 @@ export const useStore = create<State>()(
         set({ tasks, events, loaded: true })
         const s = startOfToday()
         const e = endOfToday()
-        for (const title of get().presets) {
-          const exists = get().tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= s && (t.dueAt ?? 0) <= e)
-          if (!exists) {
-            await get().addTask({ title, dueAt: s })
-          }
+        // Helpers
+        function findEventTodayByTitle(title: string): CalEvent | undefined {
+          return get().events.find((ev) => ev.title.replace(/\s*✅$/, '') === title && !ev.allDay && ev.start >= s && ev.start <= e)
         }
+        async function ensureOrUpdateTimed(title: string, start: number, end: number) {
+          const existingEv = findEventTodayByTitle(title)
+          if (existingEv) {
+            await get().updateEvent(existingEv.id, { start, end, allDay: false })
+            return
+          }
+          const existsTask = get().tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= s && (t.dueAt ?? 0) <= e)
+          if (!existsTask) {
+            await get().addTask({ title, dueAt: start })
+          }
+          const allDayEv = get().events.find((ev) => ev.title.replace(/\s*✅$/, '') === title && ev.allDay && ev.start >= s && ev.start <= e)
+          if (allDayEv) await get().removeEvent(allDayEv.id)
+          await get().addEvent({ title, start, end, allDay: false })
+        }
+
+        // Skip generic all-day add for timed presets; handle them explicitly below
+        for (const title of get().presets) {
+          if (title === 'Pray' || title === 'Gym' || title === 'Eat') continue
+          const exists = get().tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= s && (t.dueAt ?? 0) <= e)
+          if (!exists) await get().addTask({ title, dueAt: s })
+        }
+
+        // Fixed timed presets for today
+        const base = new Date(s)
+        function at(h: number, m: number) { const d = new Date(base); d.setHours(h, m, 0, 0); return d.getTime() }
+        // Gym 07:00–08:00
+        await ensureOrUpdateTimed('Gym', at(7,0), at(8,0))
+        // Lunch 13:00–13:30
+        await ensureOrUpdateTimed('Lunch', at(13,0), at(13,30))
+
+        // Daily prayers for Sterling, VA (computed via adhan)
+        try {
+          const prayers = getTodaysPrayerTimesMs(get().prayerMethod, get().prayerMadhab)
+          await ensureOrUpdateTimed('Fajr', prayers.fajr, prayers.fajr + 20*60*1000)
+          await ensureOrUpdateTimed('Dhuhr', prayers.dhuhr, prayers.dhuhr + 20*60*1000)
+          await ensureOrUpdateTimed('Asr', prayers.asr, prayers.asr + 20*60*1000)
+          await ensureOrUpdateTimed('Maghrib', prayers.maghrib, prayers.maghrib + 20*60*1000)
+          await ensureOrUpdateTimed('Isha', prayers.isha, prayers.isha + 20*60*1000)
+        } catch {}
       },
       async addTask(t) {
         const now = Date.now()
@@ -135,6 +181,39 @@ export const useStore = create<State>()(
         const [moved] = arr.splice(from, 1)
         arr.splice(to, 0, moved)
         set({ presets: arr })
+      },
+      async recomputeTodayPrayers() {
+        const s = startOfToday()
+        const e = endOfToday()
+        function inToday(ev: CalEvent) { return ev.start >= s && ev.start <= e }
+        // Recompute using current method/madhab
+        try {
+          const prayers = getTodaysPrayerTimesMs(get().prayerMethod, get().prayerMadhab)
+          const base = new Date(s)
+          function at(h: number, m: number) { const d = new Date(base); d.setHours(h, m, 0, 0); return d.getTime() }
+          // Update or create prayers
+          async function ensureOrUpdate(title: string, start: number, end: number) {
+            const ev = get().events.find((x) => x.title.replace(/\s*✅$/, '') === title && !x.allDay && inToday(x))
+            if (ev) return get().updateEvent(ev.id, { start, end, allDay: false })
+            // else rely on load() helper path
+            const existsTask = get().tasks.some((t) => t.title === title && (t.dueAt ?? 0) >= s && (t.dueAt ?? 0) <= e)
+            if (!existsTask) await get().addTask({ title, dueAt: start })
+            await get().addEvent({ title, start, end, allDay: false })
+          }
+          await ensureOrUpdate('Fajr', prayers.fajr, prayers.fajr + 20*60*1000)
+          await ensureOrUpdate('Dhuhr', prayers.dhuhr, prayers.dhuhr + 20*60*1000)
+          await ensureOrUpdate('Asr', prayers.asr, prayers.asr + 20*60*1000)
+          await ensureOrUpdate('Maghrib', prayers.maghrib, prayers.maghrib + 20*60*1000)
+          await ensureOrUpdate('Isha', prayers.isha, prayers.isha + 20*60*1000)
+        } catch {}
+      },
+      async setPrayerMethod(m) {
+        set({ prayerMethod: m })
+        await get().recomputeTodayPrayers()
+      },
+      async setPrayerMadhab(m) {
+        set({ prayerMadhab: m })
+        await get().recomputeTodayPrayers()
       },
       async loadTodayNote() {
         const s = startOfToday()
