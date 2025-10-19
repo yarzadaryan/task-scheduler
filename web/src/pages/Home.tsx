@@ -3,9 +3,11 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarIcon, CheckSquareIcon, TimerIcon } from 'lucide-react'
 import { HADITHS } from '../data/hadiths'
 
-function dayIndex(mod: number) {
+function sixHourIndex(mod: number) {
   const now = new Date()
-  return (now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate()) % Math.max(1, mod)
+  const bucket = Math.floor(now.getHours() / 6) // 0..3
+  const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate() * 2 + bucket
+  return seed % Math.max(1, mod)
 }
 
 export default function HomePage() {
@@ -13,13 +15,14 @@ export default function HomePage() {
   const catParam = searchParams.get('cat') || 'all'
   const iParamRaw = searchParams.get('i')
   const iParam = iParamRaw ? Number(iParamRaw) : NaN
-  const categories = useMemo(() => Array.from(new Set(HADITHS.flatMap((h) => h.categories))).sort(), [])
-  const filtered = useMemo(() => (catParam === 'all' ? HADITHS : HADITHS.filter((h) => h.categories.includes(catParam))), [catParam])
+  const sahihOnly = useMemo(() => HADITHS.filter((h) => /(sahih\s+al-bukhari|sahih\s+muslim)/i.test(h.source)), [])
+  const categories = useMemo(() => Array.from(new Set(sahihOnly.flatMap((h) => h.categories))).sort(), [sahihOnly])
+  const filtered = useMemo(() => (catParam === 'all' ? sahihOnly : sahihOnly.filter((h) => h.categories.includes(catParam))), [catParam, sahihOnly])
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
     const len = Math.max(1, filtered.length)
-    const base = Number.isFinite(iParam) ? Math.abs(iParam) % len : dayIndex(len)
+    const base = Number.isFinite(iParam) ? Math.abs(iParam) % len : sixHourIndex(len)
     setIndex(base)
   }, [catParam, iParamRaw, filtered.length])
 
