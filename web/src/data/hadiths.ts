@@ -1,0 +1,47 @@
+export interface Hadith {
+  text: string
+  source: string
+  categories: string[]
+}
+
+export const HADITHS: Hadith[] = [
+  { text: 'Actions are but by intentions, and every person will have only what they intended.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['intention', 'faith'] },
+  { text: 'The strong believer is better and more beloved to Allah than the weak believer. Be eager for what benefits you, seek help from Allah, and do not be helpless.', source: 'Sahih Muslim 2664', categories: ['resolve', 'effort'] },
+  { text: 'The most beloved deeds to Allah are those done regularly, even if they are few.', source: 'Sahih al-Bukhari 6465', categories: ['consistency', 'practice'] },
+  { text: 'None of you truly believes until he loves for his brother what he loves for himself.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['brotherhood', 'character'] },
+  { text: 'Whoever believes in Allah and the Last Day, let him speak good or remain silent.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['speech', 'character'] },
+  { text: 'Part of the perfection of one’s Islam is leaving that which does not concern him.', source: 'Sunan al-Tirmidhi (hasan)', categories: ['character', 'focus'] },
+  { text: 'Allah is gentle and loves gentleness in all matters.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['mercy', 'gentleness'] },
+  { text: 'Whoever relieves a believer’s distress, Allah will relieve his distress on the Day of Resurrection.', source: 'Sahih Muslim 2699', categories: ['charity', 'mercy'] },
+  { text: 'The merciful are shown mercy by the Most Merciful. Be merciful to those on the earth and the One above the heavens will be merciful to you.', source: 'Sunan al-Tirmidhi (sahih by corroboration)', categories: ['mercy'] },
+  { text: 'A Muslim is the one from whose tongue and hand other Muslims are safe.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['character', 'safety'] },
+  { text: 'The best of you are those who are best to their families, and I am the best to my family.', source: 'Sunan al-Tirmidhi (sahih by corroboration)', categories: ['family', 'character'] },
+  { text: 'He who does not thank people has not thanked Allah.', source: 'Sunan Abi Dawud (sahih by corroboration)', categories: ['gratitude', 'character'] },
+  { text: 'The world is a prison for the believer and a paradise for the disbeliever.', source: 'Sahih Muslim 2956', categories: ['zuhd', 'perspective'] },
+  { text: 'Richness is not having many possessions, but richness is contentment of the soul.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['contentment', 'character'] },
+  { text: 'Look to those below you and do not look to those above you, for it is more fitting you do not belittle Allah’s favors upon you.', source: 'Sahih Muslim 2963', categories: ['gratitude', 'contentment'] },
+  { text: 'Whoever treads a path seeking knowledge, Allah will make easy for him a path to Paradise.', source: 'Sahih Muslim 2699', categories: ['knowledge', 'effort'] },
+  { text: 'There is reward for kindness to every living creature.', source: 'Sahih al-Bukhari', categories: ['mercy', 'kindness'] },
+  { text: 'The one who strives to help the widow and the poor is like the one who fasts continually and stands in prayer at night.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['charity', 'service'] },
+  { text: 'Whoever does not show mercy will not be shown mercy.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['mercy'] },
+  { text: 'Modesty brings nothing but good.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['modesty', 'character'] },
+  { text: 'The best among you are those who learn the Qur’an and teach it.', source: 'Sahih al-Bukhari', categories: ['quran', 'knowledge'] },
+  { text: 'Beware of suspicion, for suspicion is the falsest of speech. Do not spy, nor compete in envy, nor hate one another.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['character', 'unity'] },
+  { text: 'The Muslim is a brother to the Muslim; he does not wrong him nor forsake him.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['brotherhood', 'unity'] },
+  { text: 'Whoever believes in Allah and the Last Day, let him honor his guest.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['hospitality', 'character'] },
+  { text: 'Make things easy and do not make them difficult; give glad tidings and do not drive people away.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['daawah', 'mercy'] },
+  { text: 'Allah does not look at your forms or your wealth, but He looks at your hearts and your deeds.', source: 'Sahih Muslim 2564', categories: ['sincerity', 'character'] },
+  { text: 'Prayer is a light, charity is a proof, and patience is illumination.', source: 'Sahih Muslim 223', categories: ['prayer', 'charity', 'patience'] },
+  { text: 'Whoever follows a funeral until the prayer is offered will have one qirat of reward; and whoever follows it until burial will have two qirats.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['service', 'community'] },
+  { text: 'The hand that gives is better than the hand that takes.', source: 'Sahih al-Bukhari', categories: ['charity'] },
+  { text: 'A believer is not one who eats his fill while his neighbor is hungry.', source: 'Sahih reports in meaning', categories: ['charity', 'neighbor'] },
+  { text: 'There should be neither harming nor reciprocating harm.', source: 'Sunan Ibn Majah (hasan) with corroborations', categories: ['justice', 'character'] },
+  { text: 'Whoever swallows his anger while able to act upon it, Allah will fill his heart with contentment on the Day of Resurrection.', source: 'Authentic narrations', categories: ['anger', 'patience'] },
+  { text: 'Truly in the body there is a morsel of flesh; if it is sound, the whole body is sound. Truly it is the heart.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['heart', 'character'] },
+  { text: 'The best among you are those with the best character.', source: 'Sahih al-Bukhari & Sahih Muslim', categories: ['character'] },
+  { text: 'Keep to the straight path, and if you cannot do it perfectly then come as close as you can and be glad.', source: 'Sahih al-Bukhari', categories: ['steadfastness'] },
+  { text: 'Whoever is deprived of gentleness is deprived of all goodness.', source: 'Sahih Muslim 2592', categories: ['gentleness', 'mercy'] },
+  { text: 'Do not become angry.', source: 'Sahih al-Bukhari', categories: ['anger', 'character'] },
+  { text: 'The nearest of people to me on the Day of Resurrection are those with the best character.', source: 'Sunan al-Tirmidhi (sahih by corroboration)', categories: ['character'] },
+  { text: 'He is not of us who does not show mercy to our young and respect to our elders.', source: 'Sunan al-Tirmidhi (sahih by corroboration)', categories: ['mercy', 'respect'] },
+];

@@ -1,30 +1,61 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarIcon, CheckSquareIcon, TimerIcon } from 'lucide-react'
+import { HADITHS } from '../data/hadiths'
 
-const dailyHadith = (() => {
-  const hadiths: { text: string; source: string }[] = [
-    {
-      text:
-        'Actions are but by intentions, and every person will have only what they intended.',
-      source: 'Sahih al-Bukhari & Sahih Muslim',
-    },
-    {
-      text:
-        'The strong believer is better and more beloved to Allah than the weak believer, while there is good in both. Be eager for what benefits you, seek help from Allah, and do not be helpless.',
-      source: 'Sahih Muslim 2664',
-    },
-    {
-      text:
-        'The most beloved deeds to Allah are those done regularly, even if they are few.',
-      source: 'Sahih al-Bukhari 6465',
-    },
-  ]
+function dayIndex(mod: number) {
   const now = new Date()
-  const idx = (now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate()) % hadiths.length
-  return hadiths[idx]
-})()
+  return (now.getFullYear() * 1000 + (now.getMonth() + 1) * 50 + now.getDate()) % Math.max(1, mod)
+}
 
 export default function HomePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const catParam = searchParams.get('cat') || 'all'
+  const iParamRaw = searchParams.get('i')
+  const iParam = iParamRaw ? Number(iParamRaw) : NaN
+  const categories = useMemo(() => Array.from(new Set(HADITHS.flatMap((h) => h.categories))).sort(), [])
+  const filtered = useMemo(() => (catParam === 'all' ? HADITHS : HADITHS.filter((h) => h.categories.includes(catParam))), [catParam])
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const len = Math.max(1, filtered.length)
+    const base = Number.isFinite(iParam) ? Math.abs(iParam) % len : dayIndex(len)
+    setIndex(base)
+  }, [catParam, iParamRaw, filtered.length])
+
+  const current = filtered[index % Math.max(1, filtered.length)]
+
+  function updateParamIndex(next: number) {
+    const len = Math.max(1, filtered.length)
+    const bounded = ((next % len) + len) % len
+    setIndex(bounded)
+    const sp = new URLSearchParams(searchParams)
+    sp.set('i', String(bounded))
+    setSearchParams(sp, { replace: true })
+  }
+
+  function onCategoryChange(v: string) {
+    const sp = new URLSearchParams(searchParams)
+    if (v === 'all') sp.delete('cat')
+    else sp.set('cat', v)
+    sp.set('i', '0')
+    setSearchParams(sp)
+  }
+
+  async function copyLink() {
+    const url = new URL(window.location.href)
+    if (catParam === 'all') url.searchParams.delete('cat')
+    else url.searchParams.set('cat', catParam)
+    url.searchParams.set('i', String(index))
+    try {
+      await navigator.clipboard.writeText(url.toString())
+      // lightweight feedback
+      alert('Link copied')
+    } catch {
+      // fallback: no-op
+    }
+  }
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-white">
       {/* Fuzzy white background */}
@@ -87,10 +118,30 @@ export default function HomePage() {
 
       {/* Motivation note (daily hadith) */}
       <div className="relative pb-10 px-4">
-        <figure className="mx-auto max-w-3xl text-center">
-          <blockquote className="text-sm md:text-base text-black/75 leading-relaxed">“{dailyHadith.text}”</blockquote>
-          <figcaption className="mt-2 text-xs text-black/50">{dailyHadith.source}</figcaption>
-        </figure>
+        <div className="mx-auto max-w-3xl flex flex-col items-center gap-3">
+          <div className="flex flex-col md:flex-row items-center gap-2">
+            <label className="text-xs text-black/60">Category</label>
+            <select
+              value={catParam}
+              onChange={(e) => onCategoryChange(e.target.value)}
+              className="select"
+            >
+              <option value="all">All</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <figure className="text-center">
+            <blockquote className="text-sm md:text-base text-black/75 leading-relaxed">“{current.text}”</blockquote>
+            <figcaption className="mt-2 text-xs text-black/50">{current.source}</figcaption>
+          </figure>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-outline" onClick={() => updateParamIndex(index - 1)}>Prev</button>
+            <button className="btn btn-primary" onClick={() => updateParamIndex(index + 1)}>Next</button>
+            <button className="btn btn-outline" onClick={copyLink}>Copy link</button>
+          </div>
+        </div>
       </div>
     </div>
   )
